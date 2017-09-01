@@ -78,39 +78,45 @@ Ion::Keyboard::State Ion::Keyboard::scan() {
   return result;
 }
 
+#include <chrono>
+template<typename Period, typename Rep, typename Clock, typename Duration>
+static bool wait(Rep & remaining, const std::chrono::time_point<Clock, Duration> & target) {
+  sDisplay->redraw();
+  auto now = std::chrono::high_resolution_clock::now();
+  if (now >= target) {
+    Fl::check();
+  } else {
+    Fl::wait(std::chrono::duration_cast<std::chrono::duration<double>>(target - now).count());
+  }
+  now = std::chrono::high_resolution_clock::now();
+  if (now >= target) {
+    remaining = 0;
+  } else {
+    remaining = std::chrono::duration_cast<std::chrono::duration<Rep, Period>>(target - now).count();
+  }
+  return remaining;
+}
+template<typename Period, typename Rep>
+static void sleep(Rep timeout) {
+  auto target = std::chrono::high_resolution_clock::now() + std::chrono::duration<Rep, Period>(timeout);
+  while (wait<Period>(timeout, target));
+}
+
 Ion::Events::Event Ion::Events::getEvent(int * timeout) {
-  auto last = std::chrono::high_resolution_clock::now();
-  do {
-    sDisplay->redraw();
-    Fl::wait(*timeout / 1000.0);
-    auto next = std::chrono::high_resolution_clock::now();
-    long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(next - last).count();
-    last = next;
-    if (elapsed > *timeout) {
-      *timeout = 0;
-    } else {
-      *timeout -= elapsed;
-    }
-  } while (*timeout && currentEvent == None);
+  auto target = std::chrono::high_resolution_clock::now() + std::chrono::duration<int, std::milli>(*timeout);
+  while (wait<std::milli>(*timeout, target) && currentEvent == None);
   Event event = currentEvent;
   currentEvent = None;
   updateModifiersFromEvent(event);
   return event;
 }
 
-#include <chrono>
-
 void Ion::msleep(long ms) {
-  auto start = std::chrono::high_resolution_clock::now();
-  while (true) {
-    sDisplay->redraw();
-    Fl::wait(0);
-    auto elapsed = std::chrono::high_resolution_clock::now() - start;
-    long long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-    if (milliseconds >= ms) {
-      break;
-    }
-  }
+  sleep<std::milli>(ms);
+}
+
+void Ion::usleep(long us) {
+  sleep<std::micro>(us);
 }
 
 const char * Ion::serialNumber() {

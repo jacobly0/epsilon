@@ -24,3 +24,6 @@ int main(int argc, char * argv[]) {
 
 void Ion::msleep(long ms) {
 }
+
+void Ion::usleep(long us) {
+}
