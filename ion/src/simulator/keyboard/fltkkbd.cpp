@@ -1,5 +1,7 @@
 #include <assert.h>
+#include "../init.h"
 #include "fltkkbd.h"
+#include <FL/Fl_Repeat_Button.H>
 
 constexpr int KeyboardRows = 9;
 constexpr int KeyboardColumns = 6;
@@ -28,23 +30,41 @@ static const int kShortcutForKey[Ion::Keyboard::NumberOfKeys] = {
   '0', '.', 0, 0, FL_KP_Enter, 0
 };
 
+static bool shouldRepeatKey(Ion::Keyboard::Key k) {
+  return k <= Ion::Keyboard::Key::A4 || k == Ion::Keyboard::Key::A6;
+}
+
+#include <iostream>
+static void keyHandler(Fl_Widget *, long key) {
+  if (currentEvent == Ion::Events::None) {
+    currentEvent = Ion::Events::Event(Ion::Keyboard::Key(key),
+                                      Ion::Events::isShiftActive(),
+                                      Ion::Events::isAlphaActive());
+  }
+}
+
 FltkKbd::FltkKbd(int x, int y, int w, int h) : Fl_Group(x, y, w, h) {
   assert(KeyboardRows*KeyboardColumns == Ion::Keyboard::NumberOfKeys);
   int key_width = w/KeyboardColumns;
   int key_height = h/KeyboardRows;
   for (int k=0; k<Ion::Keyboard::NumberOfKeys; k++) {
-    m_buttons[k] = new Fl_Button(x + (k%KeyboardColumns)*key_width,
-                                 y + (k/KeyboardColumns)*key_height,
-                                 key_width,
-                                 key_height,
-                                 kCharForKey[k]);
+    Fl_Button * button;
+    int key_x = x + (k%KeyboardColumns)*key_width;
+    int key_y = y + (k/KeyboardColumns)*key_height;
+    if (shouldRepeatKey((Ion::Keyboard::Key)k)) {
+      button = new Fl_Repeat_Button(key_x, key_y, key_width, key_height, kCharForKey[k]);
+    } else {
+      button = new Fl_Button(key_x, key_y, key_width, key_height, kCharForKey[k]);
+    }
     if (kCharForKey[k][0] == '\0') {
-      m_buttons[k]->deactivate();
+      button->deactivate();
+    } else {
+      button->callback(keyHandler, k);
     }
     if (kShortcutForKey[k]) {
-      m_buttons[k]->shortcut(kShortcutForKey[k]);
+      button->shortcut(kShortcutForKey[k]);
     }
-    m_buttons[k]->clear_visible_focus();
+    button->clear_visible_focus();
   }
   end();
 }
