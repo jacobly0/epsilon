@@ -1,5 +1,5 @@
 #include <string.h>
 
-#if __GLIBC__
+#ifndef __GLIBC__
 #include "strlcpy.c"
 #endif

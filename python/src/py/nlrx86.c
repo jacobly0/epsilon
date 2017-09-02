@@ -37,11 +37,11 @@
 
 #define NLR_OS_WINDOWS (defined(_WIN32) || defined(__CYGWIN__))
 
-#if NLR_OS_WINDOWS
-unsigned int nlr_push_tail(nlr_buf_t *nlr) asm("nlr_push_tail");
-#else
+//#if NLR_OS_WINDOWS
+//unsigned int nlr_push_tail(nlr_buf_t *nlr) asm("nlr_push_tail");
+//#else
 __attribute__((used)) unsigned int nlr_push_tail(nlr_buf_t *nlr);
-#endif
+//#endif
 
 unsigned int nlr_push(nlr_buf_t *nlr) {
     (void)nlr;
@@ -62,7 +62,7 @@ unsigned int nlr_push(nlr_buf_t *nlr) {
     "mov    %ebx, 20(%edx)      \n" // store %ebx into nlr_buf
     "mov    %edi, 24(%edx)      \n" // store %edi into nlr_buf
     "mov    %esi, 28(%edx)      \n" // store %esi into nlr_buf
-    "jmp    nlr_push_tail       \n" // do the rest in C
+    "jmp    _nlr_push_tail       \n" // do the rest in C
     );
 
     return 0; // needed to silence compiler warning

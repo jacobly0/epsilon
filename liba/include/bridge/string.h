@@ -7,7 +7,7 @@
 
 LIBA_BEGIN_DECLS
 
-#if __GLIBC__
+#ifndef __GLIBC__
 size_t strlcpy(char * dst, const char * src, size_t len);
 #endif
 
